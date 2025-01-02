@@ -47,12 +47,12 @@ export default function App() {
 
   const [roomUrl, setRoomUrl] = useState<string>(process.env.EXPO_PUBLIC_BASE_URL || '')
 
-  const [voiceClient, setVoiceClient] = useState<RTVIClient|undefined>()
+  const [pipecatClient, setPipecatClient] = useState<RTVIClient|undefined>()
 
   const [inCall, setInCall] = useState<boolean>(false)
   const [currentState, setCurrentState] = useState<TransportState>("disconnected")
 
-  const createVoiceClient = () => {
+  const createPipecatClient = () => {
     return new RTVIClient({
       transport: new RNDailyTransport(),
       params: {
@@ -89,7 +89,7 @@ export default function App() {
           "Authorization": `Bearer ${process.env.EXPO_PUBLIC_DAILY_API_KEY}`
         }),
         requestData: {
-          "bot_profile": "voice_2024_08",
+          "bot_profile": "voice_2024_10",
           "max_duration": 680,
           services: {
             llm: "together",
@@ -108,9 +108,9 @@ export default function App() {
 
   const start = async () => {
     try {
-      let voiceClient = createVoiceClient()
-      setVoiceClient(voiceClient)
-      await voiceClient?.connect()
+      let pipecatClient = createPipecatClient()
+      setPipecatClient(pipecatClient)
+      await pipecatClient?.connect()
     } catch (e) {
       console.log("Failed to start the bot", e)
     }
@@ -118,10 +118,10 @@ export default function App() {
 
   const leave = async () => {
     try {
-      if (voiceClient) {
-        await voiceClient.disconnect()
-        setCurrentState(voiceClient.state)
-        setVoiceClient(undefined)
+      if (pipecatClient) {
+        await pipecatClient.disconnect()
+        setCurrentState(pipecatClient.state)
+        setPipecatClient(undefined)
       }
     } catch (e) {
       console.log("Failed to disconnect", e)
@@ -130,20 +130,23 @@ export default function App() {
 
   //Add the listeners
   useEffect(() => {
-    if (!voiceClient) {
+    if (!pipecatClient) {
       return
     }
-    voiceClient
+    pipecatClient
       .on("transportStateChanged", (state) => {
-        setCurrentState(voiceClient.state)
+        setCurrentState(pipecatClient.state)
         const inCallStates = ["authenticating", "connecting", "connected", "ready"];
         setInCall(inCallStates.includes(state))
       })
+      .on("botLlmText", (data) => {
+        console.log("Received botLlmText:", data)
+      })
       .on("error", (error) => {
-        console.log("error", error)
+        console.log("Received error:", error)
       })
     return () => {}
-  }, [voiceClient])
+  }, [pipecatClient])
 
   return (
     <SafeAreaView style={styles.safeArea}>
