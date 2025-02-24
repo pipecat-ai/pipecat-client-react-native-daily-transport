@@ -3,6 +3,7 @@ import Daily, {
   DailyEventObjectAppMessage,
   DailyEventObjectAvailableDevicesUpdated,
   DailyEventObjectLocalAudioLevel,
+  DailyEventObjectNonFatalError,
   DailyEventObjectParticipant,
   DailyEventObjectParticipantLeft,
   DailyEventObjectRemoteParticipantsAudioLevel,
@@ -147,6 +148,18 @@ export class RNDailyTransport extends Transport {
     return this._daily!.localVideo();
   }
 
+  enableScreenShare(enable: boolean) {
+    if (enable) {
+      this._daily!.startScreenShare();
+    } else {
+      this._daily!.stopScreenShare();
+    }
+  }
+
+  get isSharingScreen(): boolean {
+    return this._daily!.localScreenAudio() || this._daily!.localScreenVideo();
+  }
+
   tracks() {
     const participants = this._daily?.participants();
     const bot = participants?.[this._botId];
@@ -154,6 +167,8 @@ export class RNDailyTransport extends Transport {
     const tracks: Tracks = {
       local: {
         audio: participants?.local?.tracks?.audio?.persistentTrack,
+        screenAudio: participants?.local?.tracks?.screenAudio?.persistentTrack,
+        screenVideo: participants?.local?.tracks?.screenVideo?.persistentTrack,
         video: participants?.local?.tracks?.video?.persistentTrack,
       },
     };
@@ -272,6 +287,7 @@ export class RNDailyTransport extends Transport {
     );
     this._daily!.on("app-message", this.handleAppMessage.bind(this));
     this._daily!.on("left-meeting", this.handleLeftMeeting.bind(this));
+    this._daily!.on("nonfatal-error", this.handleNonFatalError.bind(this));
   }
 
   async disconnect() {
@@ -324,17 +340,39 @@ export class RNDailyTransport extends Transport {
   }
 
   private handleTrackStarted(ev: DailyEventObjectTrack) {
-    this._callbacks.onTrackStarted?.(
-      ev.track,
-      ev.participant ? dailyParticipantToParticipant(ev.participant) : undefined
-    );
+    if (ev.type === "screenAudio" || ev.type === "screenVideo") {
+      this._callbacks.onScreenTrackStarted?.(
+        ev.track,
+        ev.participant
+          ? dailyParticipantToParticipant(ev.participant)
+          : undefined
+      );
+    } else {
+      this._callbacks.onTrackStarted?.(
+        ev.track,
+        ev.participant
+          ? dailyParticipantToParticipant(ev.participant)
+          : undefined
+      );
+    }
   }
 
   private handleTrackStopped(ev: DailyEventObjectTrack) {
-    this._callbacks.onTrackStopped?.(
-      ev.track,
-      ev.participant ? dailyParticipantToParticipant(ev.participant) : undefined
-    );
+    if (ev.type === "screenAudio" || ev.type === "screenVideo") {
+      this._callbacks.onScreenTrackStopped?.(
+        ev.track,
+        ev.participant
+          ? dailyParticipantToParticipant(ev.participant)
+          : undefined
+      );
+    } else {
+      this._callbacks.onTrackStopped?.(
+        ev.track,
+        ev.participant
+          ? dailyParticipantToParticipant(ev.participant)
+          : undefined
+      );
+    }
   }
 
   private handleParticipantJoined(ev: DailyEventObjectParticipant) {
@@ -388,6 +426,14 @@ export class RNDailyTransport extends Transport {
     this.state = "disconnected";
     this._botId = "";
     this._callbacks.onDisconnected?.();
+  }
+
+  private handleNonFatalError(ev: DailyEventObjectNonFatalError) {
+    switch (ev.type) {
+      case "screen-share-error":
+        this._callbacks.onScreenShareError?.(ev.errorMsg);
+        break;
+    }
   }
 
   get expiry(): number | undefined {
