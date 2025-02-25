@@ -1431,10 +1431,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@pipecat-ai/client-js@^0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@pipecat-ai/client-js/-/client-js-0.3.1.tgz#d2178d78f8db854b2410ebdcf308275a868195ef"
-  integrity sha512-qUcZKPXP4rYzEZcNDVtCDj6RhieTYutFgF0hnC/v6Jq1T2KY9XrKrrioXY5wO1MlWRo2CzUvLDFfKw/KOWS9yA==
+"@pipecat-ai/client-js@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@pipecat-ai/client-js/-/client-js-0.3.2.tgz#526dae2afc5812b597336893ad2d28220b49bc3a"
+  integrity sha512-psunOVrJjPka2SWlq53vxVWCA0Vt8pSXsXtn8pOLC0YTKFsUx+b7Z6quYUJcDZjCe1aAg9cKETek3Xal3Co8Tg==
   dependencies:
     "@types/events" "^3.0.3"
     clone-deep "^4.0.1"

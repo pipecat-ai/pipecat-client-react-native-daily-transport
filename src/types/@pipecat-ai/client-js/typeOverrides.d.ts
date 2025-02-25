@@ -127,9 +127,13 @@ export type Tracks = {
   local: {
     audio?: MediaStreamTrack;
     video?: MediaStreamTrack;
+    screenAudio?: MediaStreamTrack;
+    screenVideo?: MediaStreamTrack;
   };
   bot?: {
     audio?: MediaStreamTrack;
+    screenAudio?: undefined;
+    screenVideo?: undefined;
     video?: MediaStreamTrack;
   };
 };
@@ -156,8 +160,10 @@ export abstract class Transport {
     abstract get selectedSpeaker(): MediaDeviceInfo | Record<string, never>;
   abstract enableMic(enable: boolean): void;
   abstract enableCam(enable: boolean): void;
+  abstract enableScreenShare(enable: boolean): void;
   abstract get isCamEnabled(): boolean;
   abstract get isMicEnabled(): boolean;
+  abstract get isSharingScreen(): boolean;
   abstract sendMessage(message: RTVIMessage): void;
   abstract get state(): TransportState;
   abstract set state(state: TransportState);
@@ -177,6 +183,9 @@ export enum RTVIEvent {
   ParticipantLeft = "participantLeft",
   TrackStarted = "trackStarted",
   TrackStopped = "trackStopped",
+  ScreenTrackStarted = "screenTrackStarted",
+  ScreenTrackStopped = "screenTrackStopped",
+  ScreenShareError = "screenShareError",
   AvailableCamsUpdated = "availableCamsUpdated",
   AvailableMicsUpdated = "availableMicsUpdated",
   AvailableSpeakersUpdated = "availableSpeakersUpdated",
@@ -218,6 +227,9 @@ export type RTVIEvents = Partial<{
   participantLeft: (participant: Participant) => void;
   trackStarted: (track: MediaStreamTrack, participant?: Participant) => void;
   trackStopped: (track: MediaStreamTrack, participant?: Participant) => void;
+  screenTrackStarted: (track: MediaStreamTrack, p?: Participant) => void;
+  screenTrackStopped: (track: MediaStreamTrack, p?: Participant) => void;
+  screenShareError: (errorMessage: string) => void;
   availableCamsUpdated: (cams: MediaDeviceInfo[]) => void;
   availableMicsUpdated: (mics: MediaDeviceInfo[]) => void;
   availableSpeakersUpdated: (speakers: MediaDeviceInfo[]) => void;
@@ -282,10 +294,10 @@ export type RTVIClientConfigOption = {
 };
 export type RTVIURLEndpoints = "connect" | "action";
 export type RTVIClientParams = {
-  baseUrl: string;
+  baseUrl?: string | null;
 } & Partial<{
   headers?: Headers;
-  endpoints: Record<RTVIURLEndpoints, string>;
+  endpoints: Record<RTVIURLEndpoints, string | null>;
   requestData?: object;
   config?: RTVIClientConfigOption[];
 }> & {
@@ -386,6 +398,15 @@ export type RTVIEventCallbacks = Partial<{
     onSpeakerUpdated: (speaker: MediaDeviceInfo) => void;
   onTrackStarted: (track: MediaStreamTrack, participant?: Participant) => void;
   onTrackStopped: (track: MediaStreamTrack, participant?: Participant) => void;
+  onScreenTrackStarted: (
+    track: MediaStreamTrack,
+    participant?: Participant
+  ) => void;
+  onScreenTrackStopped: (
+    track: MediaStreamTrack,
+    participant?: Participant
+  ) => void;
+  onScreenShareError: (errorMessage: string) => void;
   onLocalAudioLevel: (level: number) => void;
   onRemoteAudioLevel: (level: number, participant: Participant) => void;
     onBotStartedSpeaking: () => void;

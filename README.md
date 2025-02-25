@@ -91,6 +91,9 @@ let voiceClient = new RTVIClient({
 await voiceClient.start()
 ```
 
+> Note: To enable screen sharing on iOS, follow the instructions in the [Daily Framework RN Screen Share extension](https://github.com/daily-co/rn-screen-share-extension/).
+
+
 ## Documentation
 
 Pipecat Client React Native implements a client instance that:
