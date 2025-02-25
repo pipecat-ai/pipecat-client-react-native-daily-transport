@@ -91,7 +91,7 @@ let voiceClient = new RTVIClient({
 await voiceClient.start()
 ```
 
-If you wish to enable screen sharing on iOS or Android, you must first follow the instructions outlined in the Daily Framework RN Screen Share extension [here](https://github.com/daily-co/rn-screen-share-extension/).
+> Note: To enable screen sharing on iOS, follow the instructions in the [Daily Framework RN Screen Share extension](https://github.com/daily-co/rn-screen-share-extension/).
 
 
 ## Documentation
