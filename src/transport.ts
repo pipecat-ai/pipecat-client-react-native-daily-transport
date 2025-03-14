@@ -337,6 +337,10 @@ export class RNDailyTransport extends Transport {
       this._selectedMic = ev.devices.mic;
       this._callbacks.onMicUpdated?.(ev.devices.mic as MediaDeviceInfo);
     }
+    if (this._selectedSpeaker?.deviceId !== ev.devices.speaker) {
+      this._selectedSpeaker = ev.devices.speaker;
+      this._callbacks.onSpeakerUpdated?.(ev.devices.speaker as MediaDeviceInfo);
+    }
   }
 
   private handleTrackStarted(ev: DailyEventObjectTrack) {
