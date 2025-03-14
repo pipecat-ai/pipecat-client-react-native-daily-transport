@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `startScreenShare` and `stopScreenShare` methods to `RTVIClient` and `Transport`.
   - Added `isSharingScreen` getter to `RTVIClient` and `Transport`.
 
+### Added
+
+- Fixed issue that was not triggering `onSpeakerUpdated`.
+
 ### Changes
 
 - `baseUrl` and `endpoints` are now optional parameters in the `RTVIClient` constructor (`RTVIClientParams`), allowing developers to connect directly to a transport without requiring a handshake auth bundle.
