@@ -1,7 +1,8 @@
 import {
-  MediaDeviceInfo, MediaStreamTrack,
+  MediaDeviceInfo,
+  MediaStreamTrack,
 } from '@daily-co/react-native-webrtc';
-import TypedEmitter from "typed-emitter";
+import TypedEmitter from 'typed-emitter';
 export class RTVIError extends Error {
   readonly status: number | undefined;
   constructor(message?: string, status?: number | undefined);
@@ -61,10 +62,10 @@ export type FunctionCallParams = {
 };
 export type FunctionCallCallback = (fn: FunctionCallParams) => Promise<unknown>;
 export enum LLMMessageType {
-  LLM_FUNCTION_CALL = "llm-function-call",
-  LLM_FUNCTION_CALL_START = "llm-function-call-start",
-  LLM_FUNCTION_CALL_RESULT = "llm-function-call-result",
-  LLM_JSON_COMPLETION = "llm-json-completion"
+  LLM_FUNCTION_CALL = 'llm-function-call',
+  LLM_FUNCTION_CALL_START = 'llm-function-call-start',
+  LLM_FUNCTION_CALL_RESULT = 'llm-function-call-result',
+  LLM_JSON_COMPLETION = 'llm-json-completion',
 }
 export type LLMHelperCallbacks = Partial<{
   onLLMJsonCompletion: (jsonString: string) => void;
@@ -99,7 +100,10 @@ export class LLMHelper extends RTVIClientHelper {
    * @param runImmediately boolean - wait until pipeline is idle before running
    * @returns boolean
    */
-  appendToMessages(context: LLMContextMessage, runImmediately?: boolean): Promise<boolean>;
+  appendToMessages(
+    context: LLMContextMessage,
+    runImmediately?: boolean
+  ): Promise<boolean>;
   /**
    * Run the bot's current LLM context.
    * Useful when appending messages to the context without runImmediately set to true.
@@ -117,7 +121,16 @@ export class LLMHelper extends RTVIClientHelper {
   handleFunctionCall(callback: FunctionCallCallback): void;
   handleMessage(ev: RTVIMessage): void;
 }
-export type TransportState = "disconnected" | "initializing" | "initialized" | "authenticating" | "connecting" | "connected" | "ready" | "disconnecting" | "error";
+export type TransportState =
+  | 'disconnected'
+  | 'initializing'
+  | 'initialized'
+  | 'authenticating'
+  | 'connecting'
+  | 'connected'
+  | 'ready'
+  | 'disconnecting'
+  | 'error';
 export type Participant = {
   id: string;
   name: string;
@@ -144,20 +157,26 @@ export abstract class Transport {
   protected _state: TransportState;
   protected _expiry?: number;
   constructor();
-  abstract initialize(options: RTVIClientOptions, messageHandler: (ev: RTVIMessage) => void): void;
+  abstract initialize(
+    options: RTVIClientOptions,
+    messageHandler: (ev: RTVIMessage) => void
+  ): void;
   abstract initDevices(): Promise<void>;
-  abstract connect(authBundle: unknown, abortController: AbortController): Promise<void>;
+  abstract connect(
+    authBundle: unknown,
+    abortController: AbortController
+  ): Promise<void>;
   abstract disconnect(): Promise<void>;
   abstract sendReadyMessage(): void;
   abstract getAllMics(): Promise<MediaDeviceInfo[]>;
   abstract getAllCams(): Promise<MediaDeviceInfo[]>;
-    abstract getAllSpeakers(): Promise<MediaDeviceInfo[]>;
+  abstract getAllSpeakers(): Promise<MediaDeviceInfo[]>;
   abstract updateMic(micId: string): void;
   abstract updateCam(camId: string): void;
-    abstract updateSpeaker(speakerId: string): void;
+  abstract updateSpeaker(speakerId: string): void;
   abstract get selectedMic(): MediaDeviceInfo | Record<string, never>;
   abstract get selectedCam(): MediaDeviceInfo | Record<string, never>;
-    abstract get selectedSpeaker(): MediaDeviceInfo | Record<string, never>;
+  abstract get selectedSpeaker(): MediaDeviceInfo | Record<string, never>;
   abstract enableMic(enable: boolean): void;
   abstract enableCam(enable: boolean): void;
   abstract enableScreenShare(enable: boolean): void;
@@ -171,49 +190,49 @@ export abstract class Transport {
   abstract tracks(): Tracks;
 }
 export enum RTVIEvent {
-  MessageError = "messageError",
-  Error = "error",
-  Connected = "connected",
-  Disconnected = "disconnected",
-  TransportStateChanged = "transportStateChanged",
-  Config = "config",
-  ConfigDescribe = "configDescribe",
-  ActionsAvailable = "actionsAvailable",
-  ParticipantConnected = "participantConnected",
-  ParticipantLeft = "participantLeft",
-  TrackStarted = "trackStarted",
-  TrackStopped = "trackStopped",
-  ScreenTrackStarted = "screenTrackStarted",
-  ScreenTrackStopped = "screenTrackStopped",
-  ScreenShareError = "screenShareError",
-  AvailableCamsUpdated = "availableCamsUpdated",
-  AvailableMicsUpdated = "availableMicsUpdated",
-  AvailableSpeakersUpdated = "availableSpeakersUpdated",
-  CamUpdated = "camUpdated",
-  MicUpdated = "micUpdated",
-  SpeakerUpdated = "speakerUpdated",
-  BotConnected = "botConnected",
-  BotReady = "botReady",
-  BotDisconnected = "botDisconnected",
-  BotStartedSpeaking = "botStartedSpeaking",
-  BotStoppedSpeaking = "botStoppedSpeaking",
-  RemoteAudioLevel = "remoteAudioLevel",
-  UserStartedSpeaking = "userStartedSpeaking",
-  UserStoppedSpeaking = "userStoppedSpeaking",
-  LocalAudioLevel = "localAudioLevel",
-  Metrics = "metrics",
-  UserTranscript = "userTranscript",
-  BotTranscript = "botTranscript",
-  BotLlmText = "botLlmText",
-  BotLlmStarted = "botLlmStarted",
-  BotLlmStopped = "botLlmStopped",
-  BotTtsText = "botTtsText",
-  BotTtsStarted = "botTtsStarted",
-  BotTtsStopped = "botTtsStopped",
-  LLMFunctionCall = "llmFunctionCall",
-  LLMFunctionCallStart = "llmFunctionCallStart",
-  LLMJsonCompletion = "llmJsonCompletion",
-  StorageItemStored = "storageItemStored"
+  MessageError = 'messageError',
+  Error = 'error',
+  Connected = 'connected',
+  Disconnected = 'disconnected',
+  TransportStateChanged = 'transportStateChanged',
+  Config = 'config',
+  ConfigDescribe = 'configDescribe',
+  ActionsAvailable = 'actionsAvailable',
+  ParticipantConnected = 'participantConnected',
+  ParticipantLeft = 'participantLeft',
+  TrackStarted = 'trackStarted',
+  TrackStopped = 'trackStopped',
+  ScreenTrackStarted = 'screenTrackStarted',
+  ScreenTrackStopped = 'screenTrackStopped',
+  ScreenShareError = 'screenShareError',
+  AvailableCamsUpdated = 'availableCamsUpdated',
+  AvailableMicsUpdated = 'availableMicsUpdated',
+  AvailableSpeakersUpdated = 'availableSpeakersUpdated',
+  CamUpdated = 'camUpdated',
+  MicUpdated = 'micUpdated',
+  SpeakerUpdated = 'speakerUpdated',
+  BotConnected = 'botConnected',
+  BotReady = 'botReady',
+  BotDisconnected = 'botDisconnected',
+  BotStartedSpeaking = 'botStartedSpeaking',
+  BotStoppedSpeaking = 'botStoppedSpeaking',
+  RemoteAudioLevel = 'remoteAudioLevel',
+  UserStartedSpeaking = 'userStartedSpeaking',
+  UserStoppedSpeaking = 'userStoppedSpeaking',
+  LocalAudioLevel = 'localAudioLevel',
+  Metrics = 'metrics',
+  UserTranscript = 'userTranscript',
+  BotTranscript = 'botTranscript',
+  BotLlmText = 'botLlmText',
+  BotLlmStarted = 'botLlmStarted',
+  BotLlmStopped = 'botLlmStopped',
+  BotTtsText = 'botTtsText',
+  BotTtsStarted = 'botTtsStarted',
+  BotTtsStopped = 'botTtsStopped',
+  LLMFunctionCall = 'llmFunctionCall',
+  LLMFunctionCallStart = 'llmFunctionCallStart',
+  LLMJsonCompletion = 'llmJsonCompletion',
+  StorageItemStored = 'storageItemStored',
 }
 export type RTVIEvents = Partial<{
   connected: () => void;
@@ -261,27 +280,29 @@ export type RTVIEvents = Partial<{
   llmJsonCompletion: (data: string) => void;
   storageItemStored: (data: StorageItemStoredData) => void;
 }>;
-export type RTVIEventHandler<E extends RTVIEvent> = E extends keyof RTVIEvents ? RTVIEvents[E] : never;
+export type RTVIEventHandler<E extends RTVIEvent> = E extends keyof RTVIEvents
+  ? RTVIEvents[E]
+  : never;
 /**
  * Copyright (c) 2024, Daily.
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
 export enum LogLevel {
-    NONE = 0,
-    ERROR = 1,
-    WARN = 2,
-    INFO = 3,
-    DEBUG = 4
+  NONE = 0,
+  ERROR = 1,
+  WARN = 2,
+  INFO = 3,
+  DEBUG = 4,
 }
 declare class Logger {
-    private constructor();
-    static getInstance(): Logger;
-    setLevel(level: LogLevel): void;
-    debug(...args: unknown[]): void;
-    info(...args: unknown[]): void;
-    warn(...args: unknown[]): void;
-    error(...args: unknown[]): void;
+  private constructor();
+  static getInstance(): Logger;
+  setLevel(level: LogLevel): void;
+  debug(...args: unknown[]): void;
+  info(...args: unknown[]): void;
+  warn(...args: unknown[]): void;
+  error(...args: unknown[]): void;
 }
 export type ILogger = Logger;
 export type ConfigOption = {
@@ -292,7 +313,7 @@ export type RTVIClientConfigOption = {
   service: string;
   options: ConfigOption[];
 };
-export type RTVIURLEndpoints = "connect" | "action";
+export type RTVIURLEndpoints = 'connect' | 'action';
 export type RTVIClientParams = {
   baseUrl?: string | null;
 } & Partial<{
@@ -301,8 +322,8 @@ export type RTVIClientParams = {
   requestData?: object;
   config?: RTVIClientConfigOption[];
 }> & {
-  [key: string]: unknown;
-};
+    [key: string]: unknown;
+  };
 export interface RTVIClientOptions {
   /**
    * Parameters passed as JSON stringified body params to all endpoints (e.g. connect)
@@ -343,7 +364,11 @@ export interface RTVIClientOptions {
    * @param abortController
    * @returns Promise<void>
    */
-  customConnectHandler?: (params: RTVIClientParams, timeout: ReturnType<typeof setTimeout> | undefined, abortController: AbortController) => Promise<void>;
+  customConnectHandler?: (
+    params: RTVIClientParams,
+    timeout: ReturnType<typeof setTimeout> | undefined,
+    abortController: AbortController
+  ) => Promise<void>;
   /**
    * Base URL for auth handlers and transport services
    *
@@ -392,10 +417,10 @@ export type RTVIEventCallbacks = Partial<{
   onMetrics: (data: PipecatMetricsData) => void;
   onAvailableCamsUpdated: (cams: MediaDeviceInfo[]) => void;
   onAvailableMicsUpdated: (mics: MediaDeviceInfo[]) => void;
-    onAvailableSpeakersUpdated: (speakers: MediaDeviceInfo[]) => void;
+  onAvailableSpeakersUpdated: (speakers: MediaDeviceInfo[]) => void;
   onCamUpdated: (cam: MediaDeviceInfo) => void;
   onMicUpdated: (mic: MediaDeviceInfo) => void;
-    onSpeakerUpdated: (speaker: MediaDeviceInfo) => void;
+  onSpeakerUpdated: (speaker: MediaDeviceInfo) => void;
   onTrackStarted: (track: MediaStreamTrack, participant?: Participant) => void;
   onTrackStopped: (track: MediaStreamTrack, participant?: Participant) => void;
   onScreenTrackStarted: (
@@ -409,23 +434,22 @@ export type RTVIEventCallbacks = Partial<{
   onScreenShareError: (errorMessage: string) => void;
   onLocalAudioLevel: (level: number) => void;
   onRemoteAudioLevel: (level: number, participant: Participant) => void;
-    onBotStartedSpeaking: () => void;
-    onBotStoppedSpeaking: () => void;
+  onBotStartedSpeaking: () => void;
+  onBotStoppedSpeaking: () => void;
   onUserStartedSpeaking: () => void;
   onUserStoppedSpeaking: () => void;
   onUserTranscript: (data: TranscriptData) => void;
-    onBotTranscript: (data: BotLLMTextData) => void;
-    onBotLlmText: (data: BotLLMTextData) => void;
-    onBotLlmStarted: () => void;
-    onBotLlmStopped: () => void;
-    onBotTtsText: (data: BotTTSTextData) => void;
-    onBotTtsStarted: () => void;
-    onBotTtsStopped: () => void;
+  onBotTranscript: (data: BotLLMTextData) => void;
+  onBotLlmText: (data: BotLLMTextData) => void;
+  onBotLlmStarted: () => void;
+  onBotLlmStopped: () => void;
+  onBotTtsText: (data: BotTTSTextData) => void;
+  onBotTtsStarted: () => void;
+  onBotTtsStopped: () => void;
   onStorageItemStored: (data: StorageItemStoredData) => void;
 }>;
 declare const RTVIEventEmitter_base: new () => TypedEmitter<RTVIEvents>;
-declare abstract class RTVIEventEmitter extends RTVIEventEmitter_base {
-}
+declare abstract class RTVIEventEmitter extends RTVIEventEmitter_base {}
 export class RTVIClient extends RTVIEventEmitter {
   params: RTVIClientParams;
   protected _options: RTVIClientOptions;
@@ -479,7 +503,10 @@ export class RTVIClient extends RTVIEventEmitter {
    * @param interrupt - boolean flag to interrupt the current pipeline, or wait until the next turn
    * @returns Promise<RTVIMessage> - Promise that resolves with the updated configuration
    */
-  updateConfig(config: RTVIClientConfigOption[], interrupt?: boolean): Promise<RTVIMessage>;
+  updateConfig(
+    config: RTVIClientConfigOption[],
+    interrupt?: boolean
+  ): Promise<RTVIMessage>;
   /**
    * Request bot describe the current configuration options
    * @returns Promise<unknown> - Promise that resolves with the bot's configuration description
@@ -491,14 +518,21 @@ export class RTVIClient extends RTVIEventEmitter {
    * @param config? - Optional RTVIClientConfigOption[] to query (vs. using remote config)
    * @returns RTVIClientConfigOption | undefined - Configuration options array for the service with specified key or undefined
    */
-  getServiceOptionsFromConfig(serviceKey: string, config?: RTVIClientConfigOption[]): Promise<RTVIClientConfigOption | undefined>;
+  getServiceOptionsFromConfig(
+    serviceKey: string,
+    config?: RTVIClientConfigOption[]
+  ): Promise<RTVIClientConfigOption | undefined>;
   /**
    * Returns configuration option value (unknown) for specified service key and option name
    * @param serviceKey - Service name to get options for (e.g. "llm")
    * @optional option Name of option return from the config (e.g. "model")
    * @returns Promise<unknown | undefined> - Service configuration option value or undefined
    */
-  getServiceOptionValueFromConfig(serviceKey: string, option: string, config?: RTVIClientConfigOption[]): Promise<unknown | undefined>;
+  getServiceOptionValueFromConfig(
+    serviceKey: string,
+    option: string,
+    config?: RTVIClientConfigOption[]
+  ): Promise<unknown | undefined>;
   /**
    * Returns config with updated option(s) for specified service key and option name
    * Note: does not update current config, only returns a new object (call updateConfig to apply changes)
@@ -507,14 +541,21 @@ export class RTVIClient extends RTVIEventEmitter {
    * @param config - Optional RTVIClientConfigOption[] to update (vs. using current config)
    * @returns Promise<RTVIClientConfigOption[] | undefined> - Configuration options array with updated option(s) or undefined
    */
-  setServiceOptionInConfig(serviceKey: string, option: ConfigOption | ConfigOption[], config?: RTVIClientConfigOption[]): Promise<RTVIClientConfigOption[] | undefined>;
+  setServiceOptionInConfig(
+    serviceKey: string,
+    option: ConfigOption | ConfigOption[],
+    config?: RTVIClientConfigOption[]
+  ): Promise<RTVIClientConfigOption[] | undefined>;
   /**
    * Returns config object with updated properties from passed array.
    * @param configOptions - Array of RTVIClientConfigOption[] to update
    * @param config? - Optional RTVIClientConfigOption[] to update (vs. using current config)
    * @returns Promise<RTVIClientConfigOption[]> - Configuration options
    */
-  setConfigOptions(configOptions: RTVIClientConfigOption[], config?: RTVIClientConfigOption[]): Promise<RTVIClientConfigOption[]>;
+  setConfigOptions(
+    configOptions: RTVIClientConfigOption[],
+    config?: RTVIClientConfigOption[]
+  ): Promise<RTVIClientConfigOption[]>;
   /**
    * Dispatch an action message to the bot or http single-turn endpoint
    */
@@ -551,37 +592,37 @@ export class RTVIClient extends RTVIEventEmitter {
   getHelper<T extends RTVIClientHelper>(service: string): T | undefined;
   unregisterHelper(service: string): void;
 }
-export const RTVI_MESSAGE_LABEL = "rtvi-ai";
+export const RTVI_MESSAGE_LABEL = 'rtvi-ai';
 export enum RTVIMessageType {
-  CLIENT_READY = "client-ready",
-  UPDATE_CONFIG = "update-config",
-  GET_CONFIG = "get-config",
-  DESCRIBE_CONFIG = "describe-config",
-  DESCRIBE_ACTIONS = "describe-actions",
-  DISCONNECT_BOT = "disconnect-bot",
-  BOT_READY = "bot-ready",// Bot is connected and ready to receive messages
-  ERROR = "error",// Bot initialization error
-  ERROR_RESPONSE = "error-response",// Error response from the bot in response to an action
-  CONFIG = "config",// Bot configuration
-  CONFIG_AVAILABLE = "config-available",// Configuration options available on the bot
-  CONFIG_ERROR = "config-error",// Configuration options have changed failed
-  ACTIONS_AVAILABLE = "actions-available",// Actions available on the bot
-  ACTION_RESPONSE = "action-response",// Action response from the bot
-  METRICS = "metrics",// RTVI reporting metrics
-  USER_TRANSCRIPTION = "user-transcription",// Local user speech to text transcription (partials and finals)
-  BOT_TRANSCRIPTION = "bot-transcription",// Bot full text transcription (sentence aggregated)
-  USER_STARTED_SPEAKING = "user-started-speaking",// User started speaking
-  USER_STOPPED_SPEAKING = "user-stopped-speaking",// User stopped speaking
-  BOT_STARTED_SPEAKING = "bot-started-speaking",// Bot started speaking
-  BOT_STOPPED_SPEAKING = "bot-stopped-speaking",// Bot stopped speaking
-  USER_LLM_TEXT = "user-llm-text",// Aggregated user input text which is sent to LLM
-  BOT_LLM_TEXT = "bot-llm-text",// Streamed token returned by the LLM
-  BOT_LLM_STARTED = "bot-llm-started",// Bot LLM inference starts
-  BOT_LLM_STOPPED = "bot-llm-stopped",// Bot LLM inference stops
-  BOT_TTS_TEXT = "bot-tts-text",// Bot TTS text output (streamed word as it is spoken)
-  BOT_TTS_STARTED = "bot-tts-started",// Bot TTS response starts
-  BOT_TTS_STOPPED = "bot-tts-stopped",// Bot TTS response stops
-  STORAGE_ITEM_STORED = "storage-item-stored"
+  CLIENT_READY = 'client-ready',
+  UPDATE_CONFIG = 'update-config',
+  GET_CONFIG = 'get-config',
+  DESCRIBE_CONFIG = 'describe-config',
+  DESCRIBE_ACTIONS = 'describe-actions',
+  DISCONNECT_BOT = 'disconnect-bot',
+  BOT_READY = 'bot-ready', // Bot is connected and ready to receive messages
+  ERROR = 'error', // Bot initialization error
+  ERROR_RESPONSE = 'error-response', // Error response from the bot in response to an action
+  CONFIG = 'config', // Bot configuration
+  CONFIG_AVAILABLE = 'config-available', // Configuration options available on the bot
+  CONFIG_ERROR = 'config-error', // Configuration options have changed failed
+  ACTIONS_AVAILABLE = 'actions-available', // Actions available on the bot
+  ACTION_RESPONSE = 'action-response', // Action response from the bot
+  METRICS = 'metrics', // RTVI reporting metrics
+  USER_TRANSCRIPTION = 'user-transcription', // Local user speech to text transcription (partials and finals)
+  BOT_TRANSCRIPTION = 'bot-transcription', // Bot full text transcription (sentence aggregated)
+  USER_STARTED_SPEAKING = 'user-started-speaking', // User started speaking
+  USER_STOPPED_SPEAKING = 'user-stopped-speaking', // User stopped speaking
+  BOT_STARTED_SPEAKING = 'bot-started-speaking', // Bot started speaking
+  BOT_STOPPED_SPEAKING = 'bot-stopped-speaking', // Bot stopped speaking
+  USER_LLM_TEXT = 'user-llm-text', // Aggregated user input text which is sent to LLM
+  BOT_LLM_TEXT = 'bot-llm-text', // Streamed token returned by the LLM
+  BOT_LLM_STARTED = 'bot-llm-started', // Bot LLM inference starts
+  BOT_LLM_STOPPED = 'bot-llm-stopped', // Bot LLM inference stops
+  BOT_TTS_TEXT = 'bot-tts-text', // Bot TTS text output (streamed word as it is spoken)
+  BOT_TTS_STARTED = 'bot-tts-started', // Bot TTS response starts
+  BOT_TTS_STOPPED = 'bot-tts-stopped', // Bot TTS response stops
+  STORAGE_ITEM_STORED = 'storage-item-stored',
 }
 export type ConfigData = {
   config: RTVIClientConfigOption[];
@@ -630,13 +671,16 @@ export class RTVIMessage {
   data: unknown;
   constructor(type: string, data: unknown, id?: string);
   static clientReady(): RTVIMessage;
-  static updateConfig(config: RTVIClientConfigOption[], interrupt?: boolean): RTVIMessage;
+  static updateConfig(
+    config: RTVIClientConfigOption[],
+    interrupt?: boolean
+  ): RTVIMessage;
   static describeConfig(): RTVIMessage;
   static getBotConfig(): RTVIMessage;
   static describeActions(): RTVIMessage;
   static disconnectBot(): RTVIMessage;
 }
-export const RTVI_ACTION_TYPE = "action";
+export const RTVI_ACTION_TYPE = 'action';
 export type RTVIActionRequestData = {
   service: string;
   action: string;
@@ -659,8 +703,16 @@ export type RTVIActionResponse = {
 export class MessageDispatcher {
   constructor(client: RTVIClient);
   dispatch(message: RTVIMessage): Promise<RTVIMessage>;
-  dispatchAction(action: RTVIActionRequest, onMessage: (message: RTVIMessage) => void): Promise<RTVIMessageActionResponse>;
+  dispatchAction(
+    action: RTVIActionRequest,
+    onMessage: (message: RTVIMessage) => void
+  ): Promise<RTVIMessageActionResponse>;
   resolve(message: RTVIMessage): RTVIMessage;
   reject(message: RTVIMessage): RTVIMessage;
 }
-export function httpActionGenerator(actionUrl: string, action: RTVIActionRequest, params: RTVIClientParams, handleResponse: (response: RTVIActionResponse) => void): Promise<void>;
+export function httpActionGenerator(
+  actionUrl: string,
+  action: RTVIActionRequest,
+  params: RTVIClientParams,
+  handleResponse: (response: RTVIActionResponse) => void
+): Promise<void>;
