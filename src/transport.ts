@@ -221,16 +221,16 @@ export class RNDailyTransport extends Transport {
     try {
       await this._daily.join({
         url: authBundle.room_url,
-        token: authBundle.token,
+        token: authBundle.token || '',
       });
 
       const room = await this._daily.room();
       if (room && 'id' in room && room.config && room.config.exp) {
         this._expiry = room.config.exp;
       }
-    } catch (e) {
+    } catch (e: Error | any) {
       this.state = 'error';
-      throw new TransportStartError();
+      throw new TransportStartError(e.message);
     }
 
     if (abortController.signal.aborted) return;
