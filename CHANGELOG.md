@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] - 2025-05-08
+
+### Added
+
+- Updated to the latest version of `@pipecat-ai/client-js` (0.3.5).
+  - See the recent improvements [here](https://github.com/pipecat-ai/pipecat-client-web/blob/main/CHANGELOG.md#035---2025-03-20).
+
+### Fixed
+
+- Fixed an issue where joining would fail if the `token` was `null`.
+
 ## [0.3.2] - 2025-03-14
 
 ### Added
@@ -15,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `startScreenShare` and `stopScreenShare` methods to `RTVIClient` and `Transport`.
   - Added `isSharingScreen` getter to `RTVIClient` and `Transport`.
 
-### Added
+### Fixed
 
 - Fixed issue that was not triggering `onSpeakerUpdated`.
 

@@ -1,5 +1,13 @@
 # @pipecat-ai/react-native-daily-example
 
+This internal example app is used to validate transport changes before releasing updates. It demonstrates how to integrate [Daily](https://www.daily.co/) with a React Native project using custom native code.
+
+> **Note**: This project requires a server that provides credentials via the `$EXPO_PUBLIC_BASE_URL` environment variable.
+
+A reference server implementation is available in the [Pipecat Simple Chatbot example](https://github.com/pipecat-ai/pipecat/tree/main/examples/simple-chatbot).
+
+---
+
 ## Usage
 
 ### Expo requirements
