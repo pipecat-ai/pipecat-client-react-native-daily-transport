@@ -10,7 +10,7 @@ import {
 import React, { useEffect, useState } from 'react';
 
 import { RNDailyTransport } from '@pipecat-ai/react-native-daily-transport';
-import { RTVIClient, TransportState } from '@pipecat-ai/client-js';
+import { PipecatClient, TransportState } from '@pipecat-ai/client-js';
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -48,22 +48,17 @@ export default function App() {
     process.env.EXPO_PUBLIC_BASE_URL || ''
   );
 
-  const [pipecatClient, setPipecatClient] = useState<RTVIClient | undefined>();
+  const [pipecatClient, setPipecatClient] = useState<
+    PipecatClient | undefined
+  >();
 
   const [inCall, setInCall] = useState<boolean>(false);
   const [currentState, setCurrentState] =
     useState<TransportState>('disconnected');
 
   const createPipecatClient = () => {
-    return new RTVIClient({
+    return new PipecatClient({
       transport: new RNDailyTransport(),
-      params: {
-        baseUrl: baseUrl,
-        endpoints: {
-          connect: '/connect',
-          action: '/action',
-        },
-      },
       enableMic: true,
       enableCam: false,
     });
@@ -71,9 +66,11 @@ export default function App() {
 
   const start = async () => {
     try {
-      let pipecatClient = createPipecatClient();
-      setPipecatClient(pipecatClient);
-      await pipecatClient?.connect();
+      let client = createPipecatClient();
+      await client?.startBotAndConnect({
+        endpoint: baseUrl + '/connect',
+      });
+      setPipecatClient(client);
     } catch (e) {
       console.log('Failed to start the bot', e);
     }
