@@ -7,7 +7,7 @@ import {
   TextInput,
 } from 'react-native';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import { RNDailyTransport } from '@pipecat-ai/react-native-daily-transport';
 import { PipecatClient, TransportState } from '@pipecat-ai/client-js';
@@ -61,6 +61,21 @@ export default function App() {
       transport: new RNDailyTransport(),
       enableMic: true,
       enableCam: false,
+      callbacks: {
+        onConnected: () => {
+          setInCall(true);
+        },
+        onDisconnected: () => {
+          setInCall(false);
+        },
+        onTransportStateChanged: (state) => {
+          console.log(`Transport state changed: ${state}`);
+          setCurrentState(state);
+        },
+        onError: (error) => {
+          console.log('Error:', JSON.stringify(error));
+        },
+      },
     });
   };
 
@@ -80,38 +95,12 @@ export default function App() {
     try {
       if (pipecatClient) {
         await pipecatClient.disconnect();
-        setCurrentState(pipecatClient.state);
         setPipecatClient(undefined);
       }
     } catch (e) {
       console.log('Failed to disconnect', e);
     }
   };
-
-  //Add the listeners
-  useEffect(() => {
-    if (!pipecatClient) {
-      return;
-    }
-    pipecatClient
-      .on('transportStateChanged', (state) => {
-        setCurrentState(pipecatClient.state);
-        const inCallStates = [
-          'authenticating',
-          'connecting',
-          'connected',
-          'ready',
-        ];
-        setInCall(inCallStates.includes(state));
-      })
-      .on('botLlmText', (data) => {
-        console.log('Received botLlmText:', data);
-      })
-      .on('error', (error) => {
-        console.log('Received error:', error);
-      });
-    return () => {};
-  }, [pipecatClient]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
