@@ -1,6 +1,6 @@
 {
   "name": "@pipecat-ai/react-native-daily-transport",
-  "version": "0.3.5",
+  "version": "1.2.0",
   "license": "BSD-2-Clause",
   "description": "React Native library for connecting to RTVI client using Daily",
   "source": "./src/index.tsx",
