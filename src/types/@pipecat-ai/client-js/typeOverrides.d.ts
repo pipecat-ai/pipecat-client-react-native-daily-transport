@@ -384,10 +384,6 @@ interface APIRequest {
   requestData?: Serializable;
   timeout?: number;
 }
-/**
- * @deprecated Use APIRequest instead
- */
-type ConnectionEndpoint = APIRequest;
 export type Tracks = {
   local: {
     audio?: MediaStreamTrack;
@@ -575,7 +571,7 @@ export class PipecatClient extends RTVIEventEmitter {
    * for establishing a transport session.
    * @returns The `connect` method returns a Promise that resolves with BotReadyData.
    */
-  connect(connectParams?: TransportConnectionParams): Promise<BotReadyData>
+  connect(connectParams?: TransportConnectionParams): Promise<BotReadyData>;
   startBotAndConnect(startBotParams: APIRequest): Promise<BotReadyData>;
   /**
    * Disconnect the voice client from the transport
