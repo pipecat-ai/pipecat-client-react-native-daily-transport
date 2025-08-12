@@ -573,14 +573,9 @@ export class PipecatClient extends RTVIEventEmitter {
    * The `connectParams` parameter in the `connect` method should be of type
    * `TransportConnectionParams`. This parameter is passed to the transport
    * for establishing a transport session.
-   * NOTE: `connectParams` as type `ConnectionEndpoint` IS NOW DEPRECATED. If you
-   * want to authenticate and connect to a bot in one step, use
-   * `startBotAndConnect()` instead.
-   * @returns The `connect` method returns a Promise that resolves to an unknown value.
+   * @returns The `connect` method returns a Promise that resolves with BotReadyData.
    */
-  connect(
-    connectParams?: TransportConnectionParams | ConnectionEndpoint
-  ): Promise<BotReadyData>;
+  connect(connectParams?: TransportConnectionParams): Promise<BotReadyData>
   startBotAndConnect(startBotParams: APIRequest): Promise<BotReadyData>;
   /**
    * Disconnect the voice client from the transport
