@@ -1,70 +1,142 @@
 import Daily, {
   DailyCall,
+  DailyCallOptions,
+  DailyCameraErrorObject,
+  DailyCameraErrorType,
   DailyEventObjectAppMessage,
   DailyEventObjectAvailableDevicesUpdated,
+  DailyEventObjectCameraError,
+  DailyEventObjectFatalError,
   DailyEventObjectLocalAudioLevel,
   DailyEventObjectNonFatalError,
   DailyEventObjectParticipant,
   DailyEventObjectParticipantLeft,
   DailyEventObjectRemoteParticipantsAudioLevel,
   DailyEventObjectTrack,
+  DailyFactoryOptions,
   DailyParticipant,
 } from '@daily-co/react-native-daily-js';
 
 import {
+  DeviceArray,
+  DeviceError,
   Participant,
+  PipecatClientOptions,
+  RTVIError,
+  RTVIEventCallbacks,
+  RTVIMessage,
   Tracks,
   Transport,
   TransportStartError,
   TransportState,
-  RTVIClientOptions,
-  RTVIMessage,
-  RTVIError,
+  logger,
 } from '@pipecat-ai/client-js';
 import { MediaDeviceInfo } from '@daily-co/react-native-webrtc';
 
-export interface DailyTransportAuthBundle {
-  room_url: string;
-  token: string;
+class DailyCallWrapper {
+  private _daily: DailyCall;
+  private _proxy: DailyCall;
+
+  constructor(daily: DailyCall) {
+    this._daily = daily;
+    this._proxy = new Proxy(this._daily, {
+      get: (target, prop, receiver) => {
+        if (typeof target[prop as keyof DailyCall] === 'function') {
+          let errMsg;
+          switch (String(prop)) {
+            // Disable methods that modify the lifecycle of the call. These operations
+            // should be performed via the PipecatClient in order to keep state in sync.
+            case 'preAuth':
+              errMsg = `Calls to preAuth() are disabled. Please use Transport.preAuth()`;
+              break;
+            case 'startCamera':
+              errMsg = `Calls to startCamera() are disabled. Please use PipecatClient.initDevices()`;
+              break;
+            case 'join':
+              errMsg = `Calls to join() are disabled. Please use PipecatClient.connect()`;
+              break;
+            case 'leave':
+              errMsg = `Calls to leave() are disabled. Please use PipecatClient.disconnect()`;
+              break;
+            case 'destroy':
+              errMsg = `Calls to destroy() are disabled.`;
+              break;
+          }
+          if (errMsg) {
+            return () => {
+              throw new Error(errMsg);
+            };
+          }
+          // Forward other method calls
+          return (...args: any[]) => {
+            return (target[prop as keyof DailyCall] as Function)(...args);
+          };
+        }
+        // Forward property access
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+  }
+
+  get proxy(): DailyCall {
+    return this._proxy;
+  }
 }
 
 export class RNDailyTransport extends Transport {
   // Not able to use declare fields here
   // opened issue: https://github.com/facebook/create-react-app/issues/8918
-  private _daily: DailyCall | undefined;
+  private _dailyWrapper!: DailyCallWrapper;
+  private _daily!: DailyCall;
+  private _dailyFactoryOptions: DailyFactoryOptions;
+
   private _botId: string = '';
   private _selectedCam: MediaDeviceInfo | Record<string, never> = {};
   private _selectedMic: MediaDeviceInfo | Record<string, never> = {};
   private _selectedSpeaker: MediaDeviceInfo | Record<string, never> = {};
 
-  constructor() {
+  constructor(opts: DailyFactoryOptions = {}) {
     super();
+    this._callbacks = {} as RTVIEventCallbacks;
+    this._dailyFactoryOptions = opts;
+    this._daily = Daily.createCallObject({
+      ...this._dailyFactoryOptions,
+      allowMultipleCallInstances: true,
+    });
+    this._dailyWrapper = new DailyCallWrapper(this._daily);
   }
 
   public initialize(
-    options: RTVIClientOptions,
+    options: PipecatClientOptions,
     messageHandler: (ev: RTVIMessage) => void
   ): void {
-    this._callbacks = options.callbacks ?? {};
+    this._callbacks = (options.callbacks ?? {}) as RTVIEventCallbacks;
     this._onMessage = messageHandler;
 
-    const existingInstance = Daily.getCallInstance();
-    if (existingInstance) {
-      void existingInstance.destroy();
+    if (
+      this._dailyFactoryOptions.startVideoOff == null ||
+      options.enableCam != null
+    ) {
+      // Default is cam off
+      this._dailyFactoryOptions.startVideoOff = !(options.enableCam ?? false);
     }
-
-    this._daily = Daily.createCallObject({
-      startVideoOff: !(options.enableCam == true),
-      startAudioOff: options.enableMic == false,
-      allowMultipleCallInstances: true,
-      dailyConfig: {},
-    });
+    if (
+      this._dailyFactoryOptions.startAudioOff == null ||
+      options.enableMic != null
+    ) {
+      // Default is mic on
+      this._dailyFactoryOptions.startAudioOff = !(options.enableMic ?? true);
+    }
 
     this.attachEventListeners();
 
     this.state = 'disconnected';
 
-    console.debug('[RTVI Transport] Initialized');
+    logger.debug('[Daily Transport] Initialized');
+  }
+
+  get dailyCallClient(): DailyCall {
+    return this._dailyWrapper.proxy;
   }
 
   get state(): TransportState {
@@ -78,14 +150,18 @@ export class RNDailyTransport extends Transport {
     this._callbacks.onTransportStateChanged?.(state);
   }
 
+  getSessionInfo() {
+    return this._daily.meetingSessionSummary();
+  }
+
   async getAllCams() {
-    const { devices } = await this._daily!.enumerateDevices();
+    const { devices } = await this._daily.enumerateDevices();
     return devices.filter((d) => d.kind === 'videoinput') as MediaDeviceInfo[];
   }
 
   updateCam(camId: string) {
-    this._daily!.setCamera(camId).then(async () => {
-      let inputDevices = await this._daily!.getInputDevices();
+    this._daily.setCamera(camId).then(async () => {
+      let inputDevices = await this._daily.getInputDevices();
       this._selectedCam = inputDevices.camera as MediaDeviceInfo;
     });
   }
@@ -95,13 +171,13 @@ export class RNDailyTransport extends Transport {
   }
 
   async getAllMics() {
-    const { devices } = await this._daily!.enumerateDevices();
+    const { devices } = await this._daily.enumerateDevices();
     return devices.filter((d) => d.kind === 'audio') as MediaDeviceInfo[];
   }
 
   updateMic(micId: string) {
-    this._daily!.setAudioDevice(micId).then(async () => {
-      let inputDevices = await this._daily!.getInputDevices();
+    this._daily.setAudioDevice(micId).then(async () => {
+      let inputDevices = await this._daily.getInputDevices();
       this._selectedMic = inputDevices.mic as MediaDeviceInfo;
     });
   }
@@ -111,13 +187,13 @@ export class RNDailyTransport extends Transport {
   }
 
   async getAllSpeakers() {
-    const { devices } = await this._daily!.enumerateDevices();
+    const { devices } = await this._daily.enumerateDevices();
     return devices.filter((d) => d.kind === 'audio');
   }
 
   updateSpeaker(speakerId: string) {
     this._daily?.setAudioDevice(speakerId).then(async () => {
-      const devicesInUse = await this._daily!.getInputDevices();
+      const devicesInUse = await this._daily.getInputDevices();
       this._selectedSpeaker = devicesInUse?.speaker;
     });
   }
@@ -127,35 +203,35 @@ export class RNDailyTransport extends Transport {
   }
 
   enableMic(enable: boolean) {
-    this._daily!.setLocalAudio(enable);
+    this._daily.setLocalAudio(enable);
   }
 
   get isMicEnabled() {
-    return this._daily!.localAudio();
+    return this._daily.localAudio();
   }
 
   enableCam(enable: boolean) {
-    this._daily!.setLocalVideo(enable);
+    this._daily.setLocalVideo(enable);
   }
 
   get isCamEnabled() {
-    return this._daily!.localVideo();
+    return this._daily.localVideo();
   }
 
-  enableScreenShare(enable: boolean) {
+  public enableScreenShare(enable: boolean) {
     if (enable) {
-      this._daily!.startScreenShare();
+      this._daily.startScreenShare();
     } else {
-      this._daily!.stopScreenShare();
+      this._daily.stopScreenShare();
     }
   }
 
-  get isSharingScreen(): boolean {
-    return this._daily!.localScreenAudio() || this._daily!.localScreenVideo();
+  public get isSharingScreen(): boolean {
+    return this._daily.localScreenAudio() || this._daily.localScreenVideo();
   }
 
   tracks() {
-    const participants = this._daily?.participants();
+    const participants = this._daily.participants() ?? {};
     const bot = participants?.[this._botId];
 
     const tracks: Tracks = {
@@ -175,6 +251,11 @@ export class RNDailyTransport extends Transport {
     }
 
     return tracks;
+  }
+
+  async preAuth(dailyCallOptions: DailyCallOptions) {
+    this._dailyFactoryOptions = dailyCallOptions;
+    await this._daily.preAuth(dailyCallOptions);
   }
 
   async initDevices() {
@@ -206,34 +287,62 @@ export class RNDailyTransport extends Transport {
     this.state = 'initialized';
   }
 
-  async connect(
-    authBundle: DailyTransportAuthBundle,
-    abortController: AbortController
-  ) {
+  _validateConnectionParams(
+    connectParams?: unknown
+  ): DailyCallOptions | undefined {
+    if (connectParams === undefined || connectParams === null) {
+      return undefined;
+    }
+    if (typeof connectParams !== 'object') {
+      throw new RTVIError('Invalid connection parameters');
+    }
+    type DailyConnectParams = DailyCallOptions & {
+      room_url?: string;
+      dailyRoom?: string; // for compatibility with old PipecatCloud versions
+      dailyToken?: string; // for compatibility with old PipecatCloud versions
+    };
+    const tmpParams = connectParams as DailyConnectParams;
+    if (tmpParams.room_url) {
+      tmpParams.url = tmpParams.room_url;
+      delete tmpParams.room_url;
+    } else if (tmpParams.dailyRoom) {
+      tmpParams.url = tmpParams.dailyRoom;
+      delete tmpParams.dailyRoom;
+    }
+    if (tmpParams.dailyToken) {
+      tmpParams.token = tmpParams.dailyToken;
+      delete tmpParams.dailyToken;
+    }
+    if (!tmpParams.token) {
+      // Daily doesn't like token being in the map and undefined or null
+      delete tmpParams.token;
+    }
+    return tmpParams as DailyCallOptions;
+  }
+
+  async _connect(connectParams?: DailyCallOptions) {
     if (!this._daily) {
       throw new RTVIError('Transport instance not initialized');
     }
 
-    if (abortController.signal.aborted) return;
+    if (connectParams) {
+      this._dailyFactoryOptions = {
+        ...this._dailyFactoryOptions,
+        ...connectParams,
+      };
+    }
 
     this.state = 'connecting';
 
     try {
-      await this._daily.join({
-        url: authBundle.room_url,
-        token: authBundle.token || '',
-      });
-
-      const room = await this._daily.room();
-      if (room && 'id' in room && room.config && room.config.exp) {
-        this._expiry = room.config.exp;
-      }
-    } catch (e: Error | any) {
+      await this._daily.join(this._dailyFactoryOptions);
+    } catch (e) {
+      logger.error('Failed to join room', e);
       this.state = 'error';
-      throw new TransportStartError(e.message);
+      throw new TransportStartError();
     }
 
-    if (abortController.signal.aborted) return;
+    if (this._abortController?.signal.aborted) return;
 
     this.state = 'connected';
 
@@ -243,7 +352,7 @@ export class RNDailyTransport extends Transport {
   async sendReadyMessage(): Promise<void> {
     return new Promise<void>((resolve) => {
       (async () => {
-        this._daily!.on('track-started', (ev) => {
+        this._daily.on('track-started', (ev) => {
           if (!ev.participant?.local) {
             this.state = 'ready';
             this.sendMessage(RTVIMessage.clientReady());
@@ -255,45 +364,46 @@ export class RNDailyTransport extends Transport {
   }
 
   private attachEventListeners() {
-    this._daily!.on(
+    this._daily.on(
       'available-devices-updated',
       this.handleAvailableDevicesUpdated.bind(this)
     );
 
-    this._daily!.on(
+    this._daily.on(
       // TODO, we need to add DailyEventObjectSelectedDevicesUpdated to types overrides inside react-ntive-daily-js
       // @ts-ignore
       'selected-devices-updated',
       this.handleSelectedDevicesUpdated.bind(this)
     );
+    this._daily.on('camera-error', this.handleDeviceError.bind(this));
 
-    this._daily!.on('track-started', this.handleTrackStarted.bind(this));
-    this._daily!.on('track-stopped', this.handleTrackStopped.bind(this));
-    this._daily!.on(
+    this._daily.on('track-started', this.handleTrackStarted.bind(this));
+    this._daily.on('track-stopped', this.handleTrackStopped.bind(this));
+    this._daily.on(
       'participant-joined',
       this.handleParticipantJoined.bind(this)
     );
-    this._daily!.on('participant-left', this.handleParticipantLeft.bind(this));
-    this._daily!.on('local-audio-level', this.handleLocalAudioLevel.bind(this));
-    this._daily!.on(
+    this._daily.on('participant-left', this.handleParticipantLeft.bind(this));
+    this._daily.on('local-audio-level', this.handleLocalAudioLevel.bind(this));
+    this._daily.on(
       'remote-participants-audio-level',
       this.handleRemoteAudioLevel.bind(this)
     );
-    this._daily!.on('app-message', this.handleAppMessage.bind(this));
-    this._daily!.on('left-meeting', this.handleLeftMeeting.bind(this));
-    this._daily!.on('nonfatal-error', this.handleNonFatalError.bind(this));
+    this._daily.on('app-message', this.handleAppMessage.bind(this));
+    this._daily.on('left-meeting', this.handleLeftMeeting.bind(this));
+    this._daily.on('error', this.handleFatalError.bind(this));
+    this._daily.on('nonfatal-error', this.handleNonFatalError.bind(this));
   }
 
-  async disconnect() {
-    this._daily!.stopLocalAudioLevelObserver();
-    this._daily!.stopRemoteParticipantsAudioLevelObserver();
-
-    await this._daily!.leave();
-    await this._daily!.destroy();
+  async _disconnect() {
+    this.state = 'disconnecting';
+    this._daily.stopLocalAudioLevelObserver();
+    this._daily.stopRemoteParticipantsAudioLevelObserver();
+    await this._daily.leave();
   }
 
   public sendMessage(message: RTVIMessage) {
-    this._daily!.sendAppMessage(message, '*');
+    this._daily.sendAppMessage(message, '*');
   }
 
   private handleAppMessage(ev: DailyEventObjectAppMessage) {
@@ -316,6 +426,9 @@ export class RNDailyTransport extends Transport {
     this._callbacks.onAvailableMicsUpdated?.(
       ev.availableDevices.filter((d) => d.kind === 'audio')
     );
+    this._callbacks.onAvailableSpeakersUpdated?.(
+      ev.availableDevices.filter((d) => d.kind === 'audio')
+    );
   }
 
   // TODO, we need to add DailyEventObjectSelectedDevicesUpdated to types overrides inside react-ntive-daily-js
@@ -335,6 +448,59 @@ export class RNDailyTransport extends Transport {
       this._selectedSpeaker = ev.devices.speaker;
       this._callbacks.onSpeakerUpdated?.(ev.devices.speaker as MediaDeviceInfo);
     }
+  }
+
+  private handleDeviceError(ev: DailyEventObjectCameraError) {
+    const generateDeviceError = (
+      error: DailyCameraErrorObject<DailyCameraErrorType>
+    ) => {
+      const devices: DeviceArray = [];
+      switch (error.type) {
+        case 'permissions': {
+          error.blockedMedia.forEach((d) => {
+            devices.push(d === 'video' ? 'cam' : 'mic');
+          });
+          return new DeviceError(devices, error.type, error.msg, {
+            blockedBy: error.blockedBy,
+          });
+        }
+        case 'not-found': {
+          error.missingMedia.forEach((d) => {
+            devices.push(d === 'video' ? 'cam' : 'mic');
+          });
+          return new DeviceError(devices, error.type, error.msg);
+        }
+        case 'constraints': {
+          error.failedMedia.forEach((d) => {
+            devices.push(d === 'video' ? 'cam' : 'mic');
+          });
+          return new DeviceError(devices, error.type, error.msg, {
+            reason: error.reason,
+          });
+        }
+        case 'cam-in-use': {
+          devices.push('cam');
+          return new DeviceError(devices, 'in-use', error.msg);
+        }
+        case 'mic-in-use': {
+          devices.push('mic');
+          return new DeviceError(devices, 'in-use', error.msg);
+        }
+        case 'cam-mic-in-use': {
+          devices.push('cam');
+          devices.push('mic');
+          return new DeviceError(devices, 'in-use', error.msg);
+        }
+        case 'undefined-mediadevices':
+        case 'unknown':
+        default: {
+          devices.push('cam');
+          devices.push('mic');
+          return new DeviceError(devices, error.type, error.msg);
+        }
+      }
+    };
+    this._callbacks.onDeviceError?.(generateDeviceError(ev.error));
   }
 
   private handleTrackStarted(ev: DailyEventObjectTrack) {
@@ -404,7 +570,7 @@ export class RNDailyTransport extends Transport {
   private handleRemoteAudioLevel(
     ev: DailyEventObjectRemoteParticipantsAudioLevel
   ) {
-    const participants = this._daily!.participants();
+    const participants = this._daily.participants();
 
     for (const participantId in ev.participantsAudioLevel) {
       if (ev.participantsAudioLevel.hasOwnProperty(participantId)) {
@@ -426,16 +592,19 @@ export class RNDailyTransport extends Transport {
     this._callbacks.onDisconnected?.();
   }
 
+  private handleFatalError(ev: DailyEventObjectFatalError) {
+    logger.error('Daily fatal error', ev.errorMsg);
+    this.state = 'error';
+    this._botId = '';
+    this._callbacks.onError?.(RTVIMessage.error(ev.errorMsg, true));
+  }
+
   private handleNonFatalError(ev: DailyEventObjectNonFatalError) {
     switch (ev.type) {
       case 'screen-share-error':
         this._callbacks.onScreenShareError?.(ev.errorMsg);
         break;
     }
-  }
-
-  get expiry(): number | undefined {
-    return this._expiry;
   }
 }
 
